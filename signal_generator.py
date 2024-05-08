@@ -9,7 +9,7 @@ import time
 sps = 22050
 
 # Frequency / pitch
-freq_hz = 200
+freq_hz = 6000
 
 # Duration
 duration_s = 10.0
@@ -23,6 +23,11 @@ waveform = np.sin(2 * np.pi * each_sample_number * freq_hz / sps) + 3 * np.sin(2
 waveform_quiet = waveform * atten
 
 # Play the waveform out the speakers
+#print(sd.query_devices())
+sd.default.device = [2,2]
+
+print("start")
 sd.play(waveform_quiet, sps)
 time.sleep(duration_s)
+print("end")
 sd.stop()
