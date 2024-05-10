@@ -6,13 +6,13 @@ import sounddevice as sd
 import time
 
 # Samples per second
-sps = 22050
+sps = 44100
 
 # Frequency / pitch
 freq_hz = 6000
 
 # Duration
-duration_s = 10.0
+duration_s = 15.0
 
 # Attenuation so the sound is reasonable
 atten = 1.0 # 0.3
