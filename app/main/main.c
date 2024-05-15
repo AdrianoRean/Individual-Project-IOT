@@ -8,25 +8,53 @@
 #include "esp_dsp.h"
 #include <math.h>
 
-#include "my_signal.c"
+#include "driver/adc.h"
+#include "esp_adc_cal.h"
+#include <inttypes.h>
 
-static const char *TAG = "main";
+#include "freertos/stream_buffer.h"
 
-#define WINDOWS_SIZE 512
-#define SAMPLING_FREQUENCY 1024
-int N = WINDOWS_SIZE;
-float sum_y[WINDOWS_SIZE / 2];
-float y_cf[WINDOWS_SIZE * 2];
-// Pointers to result arrays
-float *y1_cf = &y_cf[0];
-float *y2_cf = &y_cf[WINDOWS_SIZE];
+TaskHandle_t myTaskHandle = NULL;
+static esp_adc_cal_characteristics_t adc1_chars;
+struct BufferStructure {   // Structure declaration
+    int wait_time;
+    int size_of_buffer;           // Member (int variable)
+    StreamBufferHandle_t buffer;       // Member (char variable)
+};
+int init_sample_size = 1000;
 
-void printFrequency(){
+float compute_max_frequency(float *data, int length, int sampling_frequency)
+{
+    
+    float y_cf[length * 2];
+    float *y1_cf = &y_cf[0];
+    float *y2_cf = &y_cf[length];
+    float sum_y[length / 2];
+
+    for (int i = 0 ; i < length ; i++) {
+        y_cf[i * 2 + 0] = data[i] ;
+        y_cf[i * 2 + 1] = 0;
+    }
+    // FFT
+    dsps_fft2r_fc32(y_cf, length);
+    // Bit reverse
+    dsps_bit_rev_fc32(y_cf, length);
+    // Convert one complex vector to two complex vectors
+    dsps_cplx2reC_fc32(y_cf, length);
+    
+
+    for (int i = 0 ; i < length / 2 ; i++) {
+        y_cf[i] = 10 * log10f((y_cf[i * 2 + 0] * y_cf[i * 2 + 0] + y_cf[i * 2 + 1] * y_cf[i * 2 + 1]) / length);
+        y2_cf[i] = 10 * log10f((y2_cf[i * 2 + 0] * y2_cf[i * 2 + 0] + y2_cf[i * 2 + 1] * y2_cf[i * 2 + 1]) / length);
+        // Simple way to show two power spectrums as one plot
+        sum_y[i] = fmax(y_cf[i], y2_cf[i]);
+    }
+    
     float y1max=0.0;
     int index1max=0;
     float y2max=0.0;
     int index2max=0;
-    for(int i=0; i<N/2; i++){
+    for(int i=0; i<length/2; i++){
         if(y1_cf[i]>y1max){
             y1max=y1_cf[i];
             index1max=i;
@@ -40,71 +68,17 @@ void printFrequency(){
     }
     printf("Y1 max => Index %d Magnitude %f\n", index1max, y1max);
     printf("Y2 max => Index %d Magnitude %f\n", index2max, y2max);
-    float hz1=((float)index1max)*SAMPLING_FREQUENCY/N;
-    float hz2=((float)index2max)*SAMPLING_FREQUENCY/N;
+    float hz1=((float)index1max)*sampling_frequency/length;
+    float hz2=((float)index2max)*sampling_frequency/length;
     printf("Max y1 frequency %f\n", hz1);
     printf("Max y2 frequency %f\n", hz2);
-}
 
-void process_and_show(float *data, int length)
-{
-    
-    //float wind[N];
-    //dsps_wind_hann_f32(wind, N);
-
-    for (int i = 0 ; i < N ; i++) {
-        y_cf[i * 2 + 0] = data[i] ;//* wind[i];
-        y_cf[i * 2 + 1] = 0;
-    }
-    // FFT
-    unsigned int start_b = dsp_get_cpu_cycle_count();
-    dsps_fft2r_fc32(y_cf, N);
-    unsigned int end_b = dsp_get_cpu_cycle_count();
-    // Bit reverse
-    dsps_bit_rev_fc32(y_cf, N);
-    // Convert one complex vector to two complex vectors
-    dsps_cplx2reC_fc32(y_cf, N);
-    
-
-    for (int i = 0 ; i < N / 2 ; i++) {
-        y_cf[i] = 10 * log10f((y_cf[i * 2 + 0] * y_cf[i * 2 + 0] + y_cf[i * 2 + 1] * y_cf[i * 2 + 1]) / N);
-        y2_cf[i] = 10 * log10f((y2_cf[i * 2 + 0] * y2_cf[i * 2 + 0] + y2_cf[i * 2 + 1] * y2_cf[i * 2 + 1]) / N);
-        // Simple way to show two power spectrums as one plot
-        sum_y[i] = fmax(y_cf[i], y2_cf[i]);
-    }
-    
-
-    printFrequency();
-
-/*
-    printf("%f\n", y2_cf[49]);
-    printf("%f\n", y2_cf[50]);
-    printf("%f\n", y2_cf[51]);
-
-    printf("********************\n");
-    
-    printf("%f\n", y2_cf[100]);
-    printf("%f\n", y2_cf[101]);
-    printf("%f\n", y2_cf[102]);
-*/
-    printf("----------------------------------------------------------------------------------\n");
-
-    // Show power spectrum in 64x10 window from -100 to 0 dB from 0..N/4 samples
-    ESP_LOGW(TAG, "Signal x1");
-    dsps_view(y_cf, N / 2, 128, 10,  -60, 40, '|');
-    ESP_LOGW(TAG, "Signal x2");
-    dsps_view(y2_cf, N / 2, 128, 10,  -60, 40, '|');
-    ESP_LOGW(TAG, "Signals x1 and x2 on one plot");
-    dsps_view(sum_y, N / 2, 128, 10,  -60, 40, '|');
-    ESP_LOGI(TAG, "FFT for %i complex points take %i cycles", N, end_b - start_b);
-
-    ESP_LOGI(TAG, "End Example.");
+    return hz1;
 
 }
 
 void app_main(void)
 { 
-    ESP_LOGI(TAG, "Start Example.");
     esp_err_t ret;
     ret = dsps_fft2r_init_fc32(NULL, CONFIG_DSP_MAX_FFT_SIZE);
     if (ret  != ESP_OK) {
@@ -112,13 +86,58 @@ void app_main(void)
         return;
     }
 
+    //Compute FFT to extract maximum frequency
+    
+    uint32_t measurements[init_sample_size];
+    struct BufferStructure buffer_struct;
+    
+    buffer_struct.wait_time = 1000/init_sample_size;
+    buffer_struct.size_of_buffer = init_sample_size;
+    buffer_struct.buffer = xStreamBufferCreate( size_t buffer_struct.size_of_buffer,
+                                           size_t buffer_struct.size_of_buffer );
 
-    /*
-    int i = 1000;
-    for(i = 0; i < 1000; i++){
-        printf("%f", signal[i]);
+    xTaskCreatePinnedToCore(measure_task, "measure_task", 4096, &buffer_struct, 10, &myTaskHandle, 1);
+
+    xStreamBufferReceive( buffer_struct.buffer,
+                             measurements,
+                             init_sample_size,
+                             1000*60 );
+
+    if( myTaskHandle != NULL )
+    {
+        vTaskDelete( myTaskHandle );
     }
-    */
-   process_and_show(signal, 1000);
 
+    float max_frequency = compute_max_frequency(measurements, init_sample_size, init_sample_size);
+
+    //COmpute parameters and variables for usual work
+    float wait_time = max_frequency*2;
+    buffer_struct.wait_time = wait_time;
+    buffer_struct.size_of_buffer = 5000/wait_time;
+    buffer_struct.buffer = xStreamBufferCreate( size_t buffer_struct.size_of_buffer,
+                                           size_t buffer_struct.size_of_buffer );
+
+    xTaskCreatePinnedToCore(measure_task, "measure_task", 4096, &buffer_struct, 10, &myTaskHandle, 1);
+
+}
+
+
+void measure_task(void* buff){
+    struct BufferStructure buffer_to_aggregate = *(struct BufferStructure*)buff;
+    uint32_t* voltage_buff[buffer_to_aggregate.size_of_buffer];
+    esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_DEFAULT, 0, &adc1_chars);
+    ESP_ERROR_CHECK(adc1_config_width(ADC_WIDTH_BIT_DEFAULT));
+    ESP_ERROR_CHECK(adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_11));
+
+    while(1){
+        for (int i = 0; i < buffer_to_aggregate.size_of_buffer; i++){
+            voltage_buff[i] = esp_adc_cal_raw_to_voltage(adc1_get_raw(ADC1_CHANNEL_0), &adc1_chars);
+            
+            vTaskDelay(pdMS_TO_TICKS(buffer_to_aggregate.wait_time));
+        }
+        xStreamBufferSend( buffer_to_aggregate.buffer,
+                            voltage_buff,
+                            buffer_to_aggregate.size_of_buffer,
+                            0)
+    }
 }
