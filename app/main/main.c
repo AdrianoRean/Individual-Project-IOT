@@ -49,48 +49,63 @@ float compute_max_frequency(uint32_t *data, int sampling_frequency)
     dsps_bit_rev_fc32(y_cf, init_sample_size);
     // Convert one complex vector to two complex vectors
     dsps_cplx2reC_fc32(y_cf, init_sample_size);
-    
-    
-    printf("Separating real from imaginary...\n");
 
-    for (int i = 0 ; i < init_sample_size / 2 ; i++) {
-        y_cf[i] = 10 * log10f((y_cf[i * 2 + 0] * y_cf[i * 2 + 0] + y_cf[i * 2 + 1] * y_cf[i * 2 + 1]) / init_sample_size);
-        y2_cf[i] = 10 * log10f((y2_cf[i * 2 + 0] * y2_cf[i * 2 + 0] + y2_cf[i * 2 + 1] * y2_cf[i * 2 + 1]) / init_sample_size);
+    printf("Separating real from imaginary and z score...\n");
+
+    int sum = 0;
+
+    for (int i = 0 ; i < init_sample_size/2 ; i++) {
+        y1_cf[i] = 10*log10f((y1_cf[i * 2 + 0] * y1_cf[i * 2 + 0] + y1_cf[i * 2 + 1] * y1_cf[i * 2 + 1])/init_sample_size);
+        printf("Value : %f, Index: %d\n", y1_cf[i], i);
+        sum += y1_cf[i];
     }
 
-    
-    printf("Evaluating frequencies...\n");
-    
-    float y1max=0.0;
-    int index1max=0;
-    float y2max=0.0;
-    int index2max=0;
-    for(int i=1; i<init_sample_size/2; i++){
-        if(y1_cf[i]>y1max){
-            y1max=y1_cf[i];
-            index1max=i;
-        }
-        
-        if(y2_cf[i]>y2max){
-            y2max=y2_cf[i];
-            index2max=i;
-        }
-        
+
+    float average = sum/(init_sample_size/2);
+    float differences = 0.0;
+    float temp = 0.0;
+
+    printf("Sum: %d\n", sum);
+    printf("Average: %f\n", average);
+
+    for (int i = 0 ; i < (init_sample_size/2) ; i++) {
+        temp = y1_cf[i] - average;
+        differences += temp*temp;
     }
-    printf("Y1 max => Index %d Magnitude %f\n", index1max, y1max);
-    printf("Y2 max => Index %d Magnitude %f\n", index2max, y2max);
-    float hz1=((float)index1max)*sampling_frequency/init_sample_size;
-    float hz2=((float)index2max)*sampling_frequency/init_sample_size;
+
+    float st_deviation = sqrt(differences/((init_sample_size/2)-1));
+    
+    printf("STD: %f\n", st_deviation);
+
+    printf("Finding outliers...\n");    
+
+    float z = 0;
+    float maxM = -1;
+    int maxI = -1;
+
+    for (int i = 0 ; i < (init_sample_size/2) ; i++) {
+        z = (y1_cf[i] - average)/st_deviation;
+        if (z > 2.5){
+            maxM = y1_cf[i];
+            maxI = i;
+        }
+    }
+    
+    printf("Y1 max => Index %d Magnitude %f\n", maxI, maxM);
+    float hz1=((float)maxI)*sampling_frequency/init_sample_size;
     printf("Max y1 frequency %f\n", hz1);
-    printf("Max y2 frequency %f\n", hz2);
 
-    printf("----------------------------------------------------------------------------------\n");
+    printf("------------------------------------- Plot ---------------------------------------------\n");
+
+    /*
+    for (int i = 0 ; i < init_sample_size/2 ; i++) {
+        y1_cf[i] = 10*log10f(y1_cf[i]/init_sample_size);
+    }
+    */
 
     // Show power spectrum in 64x10 window from -100 to 0 dB from 0..N/4 samples
     printf("Signal x1\n");
     dsps_view(y_cf, init_sample_size / 2, 128, 10,  0, 100, '|');
-    printf("Signal x2\n");
-    dsps_view(y2_cf, init_sample_size / 2, 128, 10,  0, 100, '|');
 
     return hz1;
 
