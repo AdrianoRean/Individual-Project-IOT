@@ -1,4 +1,3 @@
-
 #include "main.h"
 
 #include <freertos/task.h>
@@ -52,9 +51,9 @@ void regular_task(void){
         printf("Max frequency not correct!\n");
         vTaskDelete(NULL);
     }
-    float wait_time = max_frequency/2;
-    buffer_struct2.wait_time = ceil(wait_time);
-    buffer_struct2.size_of_buffer = ceil(5000/wait_time);
+    float wait_time = 1000/(max_frequency*2);
+    buffer_struct2.wait_time = floor(wait_time);
+    buffer_struct2.size_of_buffer = ceil(2000/wait_time);
     buffer_struct2.buffer = xStreamBufferCreate( buffer_struct2.size_of_buffer*sizeof(uint32_t),
                                            buffer_struct2.size_of_buffer*sizeof(uint32_t) );
     buffer_struct2.loop = true;
