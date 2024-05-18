@@ -10,6 +10,7 @@ TaskHandle_t myTaskHandle = NULL;
 TaskHandle_t regularTaskHandle = NULL;
 
 uint32_t measurements[init_sample_size];
+uint32_t* measurements_final;
 struct BufferStructure buffer_struct;
 struct BufferStructure buffer_struct2;
 
@@ -51,17 +52,17 @@ void regular_task(void){
         printf("Max frequency not correct!\n");
         vTaskDelete(NULL);
     }
-    float wait_time = max_frequency*2;
-    buffer_struct2.wait_time = wait_time;
-    buffer_struct2.size_of_buffer = 5000/wait_time;
-    buffer_struct2.buffer = xStreamBufferCreate( buffer_struct.size_of_buffer*sizeof(uint32_t),
-                                           buffer_struct.size_of_buffer*sizeof(uint32_t) );
+    float wait_time = max_frequency/2;
+    buffer_struct2.wait_time = ceil(wait_time);
+    buffer_struct2.size_of_buffer = ceil(5000/wait_time);
+    buffer_struct2.buffer = xStreamBufferCreate( buffer_struct2.size_of_buffer*sizeof(uint32_t),
+                                           buffer_struct2.size_of_buffer*sizeof(uint32_t) );
     buffer_struct2.loop = true;
     
-    uint32_t measurements_final[buffer_struct2.size_of_buffer];
+    measurements_final = (uint32_t *)calloc(buffer_struct2.size_of_buffer, sizeof(uint32_t));
     
     printf("--- Looping ---\n");
-    xTaskCreatePinnedToCore(measure_task, "measure_task", sizeof(uint32_t)*init_sample_size + 4096, &buffer_struct2, 10, &myTaskHandle, 1);
+    xTaskCreatePinnedToCore(measure_task, "measure_task", sizeof(uint32_t)*buffer_struct2.size_of_buffer + 4096, &buffer_struct2, 10, &myTaskHandle, 1);
     while(1){
         
         printf("Waiting for data...\n");
@@ -73,11 +74,13 @@ void regular_task(void){
         printf("Data received!\n");
 
         uint32_t sum = 0;
-        for (int j = 0; j < buffer_struct.size_of_buffer; j++){
+        for (int j = 0; j < buffer_struct2.size_of_buffer; j++){
             sum += measurements_final[j];
         }
 
-        printf("Average is: %"PRIu32"\n", sum);
+        float average = ((float)sum)/buffer_struct2.size_of_buffer;
+
+        printf("Average is: %f\n", average);
     }
 }
 
@@ -91,7 +94,7 @@ void app_main(void)
     }
     printf("FTT ready to work\n");
 
-    xTaskCreate(regular_task, "regular_task", 4096, NULL, 10, &regularTaskHandle);
+    xTaskCreate(regular_task, "regular_task", sizeof(uint32_t)*5000 + 4096, NULL, 10, &regularTaskHandle);
     
 }
 

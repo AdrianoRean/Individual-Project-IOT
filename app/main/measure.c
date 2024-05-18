@@ -37,7 +37,7 @@ void measure_task(void* buff){
             for (int i = 0; i < buffer_to_aggregate.size_of_buffer; i++){
                 voltage_buff[i] = (uint32_t)esp_adc_cal_raw_to_voltage(adc1_get_raw(ADC1_CHANNEL_0), &adc1_chars);
                 printf("Measurement %d\n",i);
-                vTaskDelay(buffer_to_aggregate.wait_time);
+                vTaskDelay(pdMS_TO_TICKS(buffer_to_aggregate.wait_time));
             }
             xStreamBufferSend( buffer_to_aggregate.buffer,
                                 voltage_buff,
