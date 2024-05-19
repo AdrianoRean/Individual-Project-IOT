@@ -4,6 +4,7 @@
 
 #include "measure.c"
 #include "fft.c"
+#include "wifi.c"
 
 TaskHandle_t myTaskHandle = NULL;
 TaskHandle_t regularTaskHandle = NULL;
@@ -13,6 +14,8 @@ uint32_t* measurements_final;
 struct BufferStructure buffer_struct;
 struct BufferStructure buffer_struct2;
 
+const char *MAIN_TAG = "Main";
+
 void regular_task(void){
     
     buffer_struct.wait_time = ceil(1000/init_sample_size);
@@ -21,9 +24,9 @@ void regular_task(void){
                                            buffer_struct.size_of_buffer*sizeof(uint32_t) );
     buffer_struct.loop = false;
     
-    printf("Created buffer\n");
+    ESP_LOGI(MAIN_TAG, "Created buffer\n");
     
-    printf("First measuring...\n");
+    ESP_LOGI(MAIN_TAG, "First measuring...\n");
 
     xTaskCreatePinnedToCore(measure_task, "measure_task", sizeof(uint32_t)*init_sample_size + 4096, &buffer_struct, 10, &myTaskHandle, 1);
 
@@ -32,23 +35,23 @@ void regular_task(void){
                              sizeof(uint32_t)*init_sample_size,
                              1000*60 );
 
-    printf("Data needed: %d, Data received: %d\n", sizeof(uint32_t)*(int)init_sample_size, n_b);
+    ESP_LOGI(MAIN_TAG, "Data needed: %d, Data received: %d\n", sizeof(uint32_t)*(int)init_sample_size, n_b);
 
     vStreamBufferDelete(buffer_struct.buffer);
     
-    printf("Done!\n");
+    ESP_LOGI(MAIN_TAG, "Done!\n");
     
-    printf("Doing FFT...\n");
+    ESP_LOGI(MAIN_TAG, "Doing FFT...\n");
 
     float max_frequency = compute_max_frequency(measurements, 1000);
     
-    printf("Done!\n");
+    ESP_LOGI(MAIN_TAG, "Done!\n");
     
-    printf("Creating new buffer...\n");
+    ESP_LOGI(MAIN_TAG, "Creating new buffer...\n");
 
     //COmpute parameters and variables for usual work
     if(max_frequency == 0){
-        printf("Max frequency not correct!\n");
+        ESP_LOGI(MAIN_TAG, "Max frequency not correct!\n");
         vTaskDelete(NULL);
     }
     float wait_time = 1000/(max_frequency*2);
@@ -60,17 +63,17 @@ void regular_task(void){
     
     measurements_final = (uint32_t *)calloc(buffer_struct2.size_of_buffer, sizeof(uint32_t));
     
-    printf("--- Looping ---\n");
+    ESP_LOGI(MAIN_TAG, "--- Looping ---\n");
     xTaskCreatePinnedToCore(measure_task, "measure_task", sizeof(uint32_t)*buffer_struct2.size_of_buffer + 4096, &buffer_struct2, 10, &myTaskHandle, 1);
     while(1){
         
-        printf("Waiting for data...\n");
+        ESP_LOGI(MAIN_TAG, "Waiting for data...\n");
         xStreamBufferReceive( buffer_struct2.buffer,
                              measurements_final,
                              buffer_struct2.size_of_buffer*sizeof(uint32_t),
                               portMAX_DELAY );
         
-        printf("Data received!\n");
+        ESP_LOGI(MAIN_TAG, "Data received!\n");
 
         uint32_t sum = 0;
         for (int j = 0; j < buffer_struct2.size_of_buffer; j++){
@@ -79,21 +82,25 @@ void regular_task(void){
 
         float average = ((float)sum)/buffer_struct2.size_of_buffer;
 
-        printf("Average is: %f\n", average);
+        ESP_LOGI(MAIN_TAG, "Average is: %f\n", average);
     }
 }
 
 void app_main(void)
 { 
+    
+    nvs_flash_init();
+    wifi_connection();
+
     esp_err_t ret;
     ret = dsps_fft2r_init_fc32(NULL, CONFIG_DSP_MAX_FFT_SIZE);
     if (ret  != ESP_OK) {
-        printf("Not possible to initialize FFT. Error = %i", ret);
+        ESP_LOGI(MAIN_TAG, "Not possible to initialize FFT. Error = %i", ret);
         return;
     }
-    printf("FTT ready to work\n");
+    ESP_LOGI(MAIN_TAG, "FTT ready to work\n");
 
-    xTaskCreate(regular_task, "regular_task", sizeof(uint32_t)*5000 + 4096, NULL, 10, &regularTaskHandle);
+    //xTaskCreate(regular_task, "regular_task", sizeof(uint32_t)*5000 + 4096, NULL, 10, &regularTaskHandle);
     
 }
 
