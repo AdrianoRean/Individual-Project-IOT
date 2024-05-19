@@ -5,9 +5,11 @@
 #include "measure.c"
 #include "fft.c"
 #include "wifi.c"
+#include "mqtt.c"
 
 TaskHandle_t myTaskHandle = NULL;
 TaskHandle_t regularTaskHandle = NULL;
+TaskHandle_t mqttTaskHandle = NULL;
 
 uint32_t measurements[init_sample_size];
 uint32_t* measurements_final;
@@ -91,6 +93,10 @@ void app_main(void)
     
     nvs_flash_init();
     wifi_connection();
+    //vTaskDelay(pdMS_TO_TICKS(2000));
+    //mqtt_initialize();
+
+    xTaskCreate(mqtt_task, "mqtt_task", 4096, NULL, 10, &mqttTaskHandle);
 
     esp_err_t ret;
     ret = dsps_fft2r_init_fc32(NULL, CONFIG_DSP_MAX_FFT_SIZE);
