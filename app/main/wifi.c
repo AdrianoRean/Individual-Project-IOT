@@ -15,13 +15,13 @@ int retry_num=0;
 static void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,void *event_data){
 
     switch(event_id){
-    case WIFI_EVENT_STA_START: ESP_LOGI(WIFI_TAG, "WIFI CONNECTING....\n"); break;
-    case WIFI_EVENT_STA_CONNECTED: ESP_LOGI(WIFI_TAG, "WiFi CONNECTED\n"); break;
+    case WIFI_EVENT_STA_START: ESP_LOGI(WIFI_TAG, "WIFI CONNECTING...."); break;
+    case WIFI_EVENT_STA_CONNECTED: ESP_LOGI(WIFI_TAG, "WiFi CONNECTED"); break;
     case WIFI_EVENT_STA_DISCONNECTED: 
-        ESP_LOGI(WIFI_TAG, "WiFi lost connection\n");
-        if(retry_num<5){esp_wifi_connect();retry_num++;ESP_LOGI(WIFI_TAG, "Retrying to Connect...\n");}
+        ESP_LOGI(WIFI_TAG, "WiFi lost connection");
+        if(retry_num<5){esp_wifi_connect();retry_num++;ESP_LOGI(WIFI_TAG, "Retrying to Connect...");}
         break;
-    case IP_EVENT_STA_GOT_IP: ESP_LOGI(WIFI_TAG, "Wifi got IP...\n\n"); break;
+    case IP_EVENT_STA_GOT_IP: ESP_LOGI(WIFI_TAG, "Wifi got IP..."); break;
     }
 }
 

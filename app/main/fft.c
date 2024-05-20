@@ -10,7 +10,7 @@ float *y2_cf = &y_cf[init_sample_size];
 
 float compute_max_frequency(uint32_t *data, int sampling_frequency)
 {
-    ESP_LOGI(FFT_TAG, "Setting variables for FFT\n");
+    ESP_LOGI(FFT_TAG, "Setting variables for FFT");
 
     float wind[init_sample_size];
     dsps_wind_hann_f32(wind, init_sample_size);
@@ -19,9 +19,9 @@ float compute_max_frequency(uint32_t *data, int sampling_frequency)
         y_cf[i * 2 + 0] = (float)data[i] * wind[i];
         y_cf[i * 2 + 1] = 0;
     }
-    ESP_LOGI(FFT_TAG, "Variables setted!\n");
+    ESP_LOGI(FFT_TAG, "Variables setted!");
     
-    ESP_LOGI(FFT_TAG, "Starting operations...\n");
+    ESP_LOGI(FFT_TAG, "Starting operations...");
     // FFT
     dsps_fft2r_fc32(y_cf, init_sample_size);
     // Bit reverse
@@ -29,7 +29,7 @@ float compute_max_frequency(uint32_t *data, int sampling_frequency)
     // Convert one complex vector to two complex vectors
     dsps_cplx2reC_fc32(y_cf, init_sample_size);
 
-    ESP_LOGI(FFT_TAG, "Separating real from imaginary and z score...\n");
+    ESP_LOGI(FFT_TAG, "Separating real from imaginary and z score...");
 
     int sum = 0;
 
@@ -43,8 +43,8 @@ float compute_max_frequency(uint32_t *data, int sampling_frequency)
     float differences = 0.0;
     float temp = 0.0;
 
-    ESP_LOGI(FFT_TAG, "Sum: %d\n", sum);
-    ESP_LOGI(FFT_TAG, "Average: %f\n", average);
+    ESP_LOGI(FFT_TAG, "Sum: %d", sum);
+    ESP_LOGI(FFT_TAG, "Average: %f", average);
 
     for (int i = 0 ; i < (init_sample_size/2) ; i++) {
         temp = y1_cf[i] - average;
@@ -53,9 +53,9 @@ float compute_max_frequency(uint32_t *data, int sampling_frequency)
 
     float st_deviation = sqrt(differences/((init_sample_size/2)-1));
     
-    ESP_LOGI(FFT_TAG, "STD: %f\n", st_deviation);
+    ESP_LOGI(FFT_TAG, "STD: %f", st_deviation);
 
-    ESP_LOGI(FFT_TAG, "Finding outliers...\n");    
+    ESP_LOGI(FFT_TAG, "Finding outliers...");    
 
     float z = 0;
     float maxM = -1;
@@ -64,17 +64,17 @@ float compute_max_frequency(uint32_t *data, int sampling_frequency)
     for (int i = 0 ; i < (init_sample_size/2) ; i++) {
         z = (y1_cf[i] - average)/st_deviation;
         if (z > 4){
-            ESP_LOGI(FFT_TAG, "frequency is: %d\n", maxI*sampling_frequency/init_sample_size);
+            ESP_LOGI(FFT_TAG, "frequency is: %d", maxI*sampling_frequency/init_sample_size);
             maxM = y1_cf[i];
             maxI = i;
         }
     }
     
-    ESP_LOGI(FFT_TAG, "Y1 max => Index %d Magnitude %f\n", maxI, maxM);
+    ESP_LOGI(FFT_TAG, "Y1 max => Index %d Magnitude %f", maxI, maxM);
     float hz1=(float)(maxI)*(float)sampling_frequency/init_sample_size;
-    ESP_LOGI(FFT_TAG, "Max y1 frequency %f\n", hz1);
+    ESP_LOGI(FFT_TAG, "Max y1 frequency %f", hz1);
 
-    ESP_LOGI(FFT_TAG, "------------------------------------- Plot ---------------------------------------------\n");
+    ESP_LOGI(FFT_TAG, "------------------------------------- Plot ---------------------------------------------");
 
     /*
     for (int i = 0 ; i < init_sample_size/2 ; i++) {
@@ -83,7 +83,7 @@ float compute_max_frequency(uint32_t *data, int sampling_frequency)
     */
 
     // Show power spectrum in 64x10 window from -100 to 0 dB from 0..N/4 samples
-    ESP_LOGI(FFT_TAG, "Signal x1\n");
+    ESP_LOGI(FFT_TAG, "Signal x1");
     dsps_view(y1_cf, init_sample_size / 2, 128, 10,  0, 100, '|');
 
     return hz1;
