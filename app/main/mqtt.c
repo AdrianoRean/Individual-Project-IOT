@@ -7,7 +7,7 @@
 #include "esp_tls.h"
 
 const char *MQTT_TAG = "MQTT";
-#define URI_MQTT "mqtts://d069030b4c20449cb72dd2416d630586.s1.eu.hivemq.cloud"
+#define URI_MQTT "mqtts://d069030b4c20449cb72dd2416d630586.s1.eu.hivemq.cloud:8883"
 #define USERNAME "Rean-esp"
 #define PASSWORD "Sottoscriv0!"
 #define TOPIC "voltage"

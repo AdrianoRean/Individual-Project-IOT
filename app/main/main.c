@@ -85,12 +85,13 @@ void app_main(void)
     ESP_LOGI(MAIN_TAG, "Setting wifi");
     wifi_connection();
 
+    /*
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
     esp_netif_sntp_init(&config);
-
     if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
         printf("Failed to update system time within 10s timeout");
     }
+    */
 
     esp_err_t ret;
     ret = dsps_fft2r_init_fc32(NULL, CONFIG_DSP_MAX_FFT_SIZE);
