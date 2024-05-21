@@ -1,5 +1,6 @@
 #include "main.h"
 #include "certificate.h"
+#include "time.c"
 
 #include "mqtt_client.h" //provides important functions to connect with MQTT
 #include "esp_event.h" //managing events of mqtt
@@ -92,6 +93,7 @@ static void mqtt_task(void* buff){
         snprintf(payload, len + 1, "%f", average);
         
         ESP_LOGI(MQTT_TAG, "Sending message...");
+        //printTime();
         esp_mqtt_client_publish(client, TOPIC, payload, len, 0, 0);
         
         // do stuff with result

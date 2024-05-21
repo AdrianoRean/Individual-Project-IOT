@@ -7,6 +7,7 @@
 #include "freertos/stream_buffer.h"
 #include "esp_log.h"
 #include "nvs_flash.h" //non volatile storage
+#include "esp_netif_sntp.h"
 
 #include <inttypes.h>
 

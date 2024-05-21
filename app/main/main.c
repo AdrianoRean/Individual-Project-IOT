@@ -53,10 +53,11 @@ void regular_task(void){
     ESP_LOGI(REGULAR_TAG, "Creating new buffer...");
 
     //COmpute parameters and variables for usual work
-    if(max_frequency == 0){
-        ESP_LOGI(REGULAR_TAG, "Max frequency not correct!");
-        vTaskDelete(NULL);
+    if(max_frequency < 1){
+        ESP_LOGI(REGULAR_TAG, "Max frequency not correct! Oversampling!");
+        max_frequency = 500.0;
     }
+
     float wait_time = 1000/(max_frequency*2);
     buffer_struct2.wait_time = floor(wait_time);
     buffer_struct2.size_of_buffer = ceil(2000/wait_time);
@@ -83,6 +84,13 @@ void app_main(void)
     nvs_flash_init();
     ESP_LOGI(MAIN_TAG, "Setting wifi");
     wifi_connection();
+
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
+    esp_netif_sntp_init(&config);
+
+    if (esp_netif_sntp_sync_wait(pdMS_TO_TICKS(10000)) != ESP_OK) {
+        printf("Failed to update system time within 10s timeout");
+    }
 
     esp_err_t ret;
     ret = dsps_fft2r_init_fc32(NULL, CONFIG_DSP_MAX_FFT_SIZE);
