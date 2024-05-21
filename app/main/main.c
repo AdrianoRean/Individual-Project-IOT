@@ -47,8 +47,6 @@ void regular_task(void){
     ESP_LOGI(REGULAR_TAG, "Doing FFT...");
 
     float max_frequency = compute_max_frequency(measurements, 1000);
-
-    max_frequency = 500.0;
     
     ESP_LOGI(REGULAR_TAG, "Done!");
     
