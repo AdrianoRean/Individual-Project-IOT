@@ -63,7 +63,7 @@ float compute_max_frequency(uint32_t *data, int sampling_frequency)
 
     for (int i = 0 ; i < (init_sample_size/2) ; i++) {
         z = (y1_cf[i] - average)/st_deviation;
-        if (z > 4){
+            if (z > 4){
             ESP_LOGI(FFT_TAG, "frequency is: %d", maxI*sampling_frequency/init_sample_size);
             maxM = y1_cf[i];
             maxI = i;

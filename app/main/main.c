@@ -47,6 +47,8 @@ void regular_task(void){
     ESP_LOGI(REGULAR_TAG, "Doing FFT...");
 
     float max_frequency = compute_max_frequency(measurements, 1000);
+
+    max_frequency = 500.0;
     
     ESP_LOGI(REGULAR_TAG, "Done!");
     
@@ -91,6 +93,10 @@ void app_main(void)
         return;
     }
     ESP_LOGI(MAIN_TAG, "FTT ready to work");
+
+    ESP_LOGI(MAIN_TAG, "Delay to set things");
+
+    vTaskDelay(pdMS_TO_TICKS(5000));
 
     ESP_LOGI(MAIN_TAG, "starting regular task");
     xTaskCreate(regular_task, "regular_task", sizeof(uint32_t)*5000 + 4096, NULL, 10, &regularTaskHandle);
