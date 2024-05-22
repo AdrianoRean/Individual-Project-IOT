@@ -1,0 +1,19 @@
+
+#include "esp_sleep.h"
+#include "esp_timer.h"
+
+        uint64_t time_to_sleep = buffer_to_aggregate.wait_time * 10000 - 40;
+        ESP_LOGI(MEASURE_TAG, "Setting sleep for: %"PRIu64, time_to_sleep);
+        int err = esp_sleep_enable_timer_wakeup(time_to_sleep);
+        if (err == ESP_OK){
+            ESP_LOGI(MEASURE_TAG, "timer wakeup source is ready");
+        }else{
+            ESP_LOGI(MEASURE_TAG, "timer wakeup source failed");
+        }
+
+                int64_t t_before_us = esp_timer_get_time();
+                esp_light_sleep_start();    
+                int64_t t_after_us = esp_timer_get_time();
+                ESP_LOGI(MEASURE_TAG, "Sleeped for: %"PRIu64, t_after_us - t_before_us);
+
+                //
