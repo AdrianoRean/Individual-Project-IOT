@@ -21,8 +21,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch ((esp_mqtt_event_id_t)event_id){
         case MQTT_EVENT_CONNECTED: 
             ESP_LOGI(MQTT_TAG, "MQTT_EVENT_CONNECTED");
+            /*
             esp_mqtt_client_subscribe(client,"Voltage Measurements",0); //in mqtt we require a topic to subscribe and client is from event client and 0 is quality of service it can be 1 or 2
             ESP_LOGI(MQTT_TAG, "sent subscribe successful" );
+            */
             break;
         case MQTT_EVENT_DISCONNECTED: ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DISCONNECTED"); break;
         case MQTT_EVENT_SUBSCRIBED: ESP_LOGI(MQTT_TAG, "MQTT_EVENT_SUBSCRIBED"); break;
