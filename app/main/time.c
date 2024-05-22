@@ -4,7 +4,8 @@
 const char *TIME_TAG = "Time";
 struct timeval tv;
 
-static void printTime(void){setenv("TZ", "CEST+2", 1);
+static void printTime(void){
+    setenv("TZ", "CEST+2", 1);
     tzset();
 
     gettimeofday(&tv, NULL);
