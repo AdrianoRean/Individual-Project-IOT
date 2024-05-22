@@ -9,7 +9,9 @@
 
 const char *WIFI_TAG = "Wifi";
 const char *ssid = "Nokia 8.3 5G";
+//const char *ssid = "INITIA-14 2711";
 const char *pass = "UnPostoAlCaldo";
+//const char *pass = "77Sq0}06";
 int retry_num=0;
 
 static void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,void *event_data){

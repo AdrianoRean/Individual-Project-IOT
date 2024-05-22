@@ -9,6 +9,6 @@
 227,25 ms
 
 
-ip.src==192.168.226.0/8 && ip.dst==52.31.149.80
+tcp.port==8883 && ip.src==192.168.226.93
 
-54 byte su porta 8884
+104 byte su porta 8883
